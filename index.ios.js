@@ -9,7 +9,12 @@ import {
   ListView
 } from 'react-native';
 
-const oauthLoginCallbackPrefix = "starlingreactnative://login"
+const config = {
+  oauthLoginCallbackUri: "starlingreactnative://login",
+  clientId: "AVSR61t8XXPMcEzl5DSD",
+  clientSecret: "62nG9S5ERuYYgwqKuLoh6e2ZeCsouDLX8cFeor6R"
+};
+
 const initialState = {
   oauthAccessToken: undefined,
   oauthRefreshToken: undefined,
@@ -50,15 +55,15 @@ export default class StarlingReactNative extends Component {
       oauthState: state
     });
     const state = Math.random().toString(36).substring(7);
-    const oauthUrl = `starlingbank://oauth?client_id=AVSR61t8XXPMcEzl5DSD&response_type=code&redirect_url=${encodeURIComponent("starlingreactnative://login")}&state=${state}`;
-    Linking.openURL(oauthUrl);
+    const oauthUrl = `starlingbank://oauth?client_id=${config.clientId}&response_type=code&redirect_url=${encodeURIComponent(config.oauthLoginCallbackUri)}&state=${state}`;
+    Linking.openURL(oauthUrl).catch(err => this.setState({error: error.message}));
   }
 
   componentDidMount() {
     const _this = this
     this.linkingUrlHandler = event => {
       console.log(">> Handling app launch URL: " + event.url);
-      if (event.url.startsWith(oauthLoginCallbackPrefix)) {
+      if (event.url.startsWith(config.oauthLoginCallbackUri)) {
         _this.handleOauthLoginCallback(event.url);
       }
     };
@@ -71,7 +76,7 @@ export default class StarlingReactNative extends Component {
 
   handleOauthLoginCallback(url) {
     var queryParams = {}
-    url.substring(oauthLoginCallbackPrefix.length + 1).split("&").forEach(queryParam => {
+    url.substring(config.oauthLoginCallbackUri.length + 1).split("&").forEach(queryParam => {
       const queryParamParts = queryParam.split("=");
       queryParams[queryParamParts[0].toLowerCase()] = queryParamParts[1];
     });
@@ -80,15 +85,12 @@ export default class StarlingReactNative extends Component {
     if (this.state.oauthState != state) {
       this.setState(Object.assign({}, initialState));
     }
-    const clientId = "AVSR61t8XXPMcEzl5DSD"
-    const clientSecret = "62nG9S5ERuYYgwqKuLoh6e2ZeCsouDLX8cFeor6R"
-    const redirectUri = "starlingreactnative://login"
     const formParams = {
       code: accessCode,
       grant_type: 'authorization_code',
-      client_id: clientId,
-      client_secret: clientSecret,
-      redirect_uri: redirectUri
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+      redirect_uri: config.oauthLoginCallbackUri
     };
     var formBody = [];
     for (var property in formParams) {
@@ -131,7 +133,6 @@ export default class StarlingReactNative extends Component {
       return transactionsResponse.json();
     })
     .then(transactionsResult => {
-      // FIXME: Use Immutable.js?
       const customer = this.state.customer || {};
       const ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
       customer.transactions = ds.cloneWithRows(transactionsResult._embedded.transactions);
@@ -164,13 +165,15 @@ const ProfileView = (props) => {
 }
 
 const TransactionList = (props) => {
-  return <ListView dataSource={props.transactions} renderRow={(t) => <TransactionListItem transaction={t} /> } />;
+  return <ListView style={styles.transactionList} dataSource={props.transactions} renderRow={(t) => <TransactionListItem transaction={t} /> } />;
 }
 
 const TransactionListItem = (props) => {
   const transaction = props.transaction;
   return (
-      <Text>{transaction.reference}: {transaction.currency}{transaction.amount}</Text>
+    <View>
+      <Text style={styles.transactionListItem}>{transaction.reference}: {transaction.currency}{transaction.amount}</Text>
+    </View>
   );
 };
 
@@ -181,15 +184,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F5FCFF',
   },
-  welcome: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
+  transactionList: {
+    marginTop: 50,
+    padding: 8,
   },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
+  transactionListItem: {
+    fontSize: 20,
+    color: '#556655'
   },
 });
 
