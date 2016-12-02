@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import {
+  ActivityIndicator,
   AppRegistry,
   AppState,
   Linking,
@@ -24,10 +25,18 @@ export default class RootComponent extends Component {
   render() {
     return (
       <View style={styles.container}>
-        {this.state.error ? <Text>Error: {this.state.error}</Text> : null}
+
+        {this.state.message ?
+          <Text style={[styles.defaultText, styles.message]}>{this.state.message}</Text> : null}
+        {!this.state.loading && !this.state.loggedIn ? <LoginView onLoginTapped={this.loginWithStarling}/> : null}
         {this.state.customer && this.state.customer.transactions
-          ? <LoggedInView style={styles.loggedInView} customer={this.state.customer} onLogoutTapped={this.logout}/>
-          : <LoginView onLoginTapped={this.loginWithStarling} />}
+          ? <LoggedInView customer={this.state.customer} onRefreshTapped={this.loadTransactions.bind(this)} onLogoutTapped={this.logout}/>
+          : null}
+        {this.state.loading
+          ? <View style={{position: 'absolute', top: 0, left: 0, width: windowSize.width, height: windowSize.height, backgroundColor: 'rgba(120,120,120,0.4)', flex: 1, flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+              <ActivityIndicator animating={true} style={[styles.centering, {height: 80}]} size="large"/>
+            </View>
+          : null}
       </View>
     );
   }
@@ -37,8 +46,7 @@ export default class RootComponent extends Component {
    */
   initialState() {
     return {
-      loggingIn: false,
-      loggedOut: true,
+      loggedIn: true, // Assume logged in until proven otherwise.
       loading: false,
       customer: {}
     };
@@ -53,22 +61,26 @@ export default class RootComponent extends Component {
    * `componentDidMount` handles this callback).
    */
   loginWithStarling = () => {
-    this.setState({ loggingIn: true });
-    const state = Math.random().toString(36).substring(7);
-    const oauthUrl = `starlingbank://oauth?client_id=${config.clientId}&response_type=code&redirect_url=${encodeURIComponent(config.oauthLoginCallbackUri)}&state=${state}`;
-    Linking.openURL(oauthUrl).catch(err => this.setState({error: error.message}));
+    const oauthState = Math.random().toString(36).substring(7);
+    this.setState({
+      message: null,
+      oauthState: oauthState
+    });
+    const oauthUrl = `starlingbank://oauth?client_id=${config.clientId}&response_type=code&redirect_url=${encodeURIComponent(config.oauthLoginCallbackUri)}&state=${oauthState}`;
+    Linking.openURL(oauthUrl).catch(err => this.setState({message: error.message}));
   }
 
   /*
    * Sends an HTTP request to the app server to destroy the session.
    */
   logout = () => {
+    this.setState({ loading: true });
     fetch(`${config.appServerBase}/api/logout`)
     .then(() => {
-      this.setState(this.initialState());
+      this.setState(Object.assign(this.initialState(), { loggedIn: false }));
     })
     .catch((error) => {
-      console.log("Error logging out: ", error)
+      this.setState(Object.assign(this.initialState(), { message: error.message }));
     });
   }
 
@@ -100,9 +112,9 @@ export default class RootComponent extends Component {
    * state to hide the 'Logging in' message and show the 'Log in with Starling button'.
    */
   handleAppStateChange(appState) {
-    if (appState == "active" && this.state.loggingIn) {
-      this.setState(this.initialState());
-    }
+    // if (appState == "active") {
+    //   this.setState(this.initialState());
+    // }
   }
 
   /*
@@ -117,21 +129,34 @@ export default class RootComponent extends Component {
     if (event.url.startsWith(config.oauthLoginCallbackUri)) {
       var queryParams = {}
       const queryString = event.url.substring(config.oauthLoginCallbackUri.length + 1)
-      // TODO: Handle request not authorised.
-      // TODO: Handle error.
-      fetch(`${config.appServerBase}${config.appServerTokenRequestPath}?${queryString}`)
-      .then(() => {
-        this.setState({
-          loggingIn: false,
-          loggedOut: false
-        })
-      })
-      .then(() => {
-        this.loadTransactions();
-      })
-      .catch((error) => {
-        console.log("Error logging in: ", error)
+      queryString.split("&").forEach(param => {
+        const parts = param.split("=");
+        queryParams[parts[0].toLocaleLowerCase()] = parts[1];
       });
+      if (this.state.oauthState != queryParams["state"]) {
+        this.setState({
+          message: "Authentication error: invalid state"
+        });
+      } else if (queryParams["error"]) {
+        const errorCode = queryParams["error"];
+        this.setState({
+          message: errorCode == "access_denied" ? "Access denied" : "Error: " + errorCode
+        });
+      } else {
+        fetch(`${config.appServerBase}${config.appServerTokenRequestPath}?${queryString}`)
+        .then(() => {
+          this.setState({
+            loggedOut: false,
+            oauthState: null
+          })
+        })
+        .then(() => {
+          this.loadTransactions();
+        })
+        .catch((error) => {
+          this.setState({ message: error.message });
+        });
+      }
     }
   }
 
@@ -157,7 +182,7 @@ export default class RootComponent extends Component {
     })
     .then((transactionsResponse) => {
       if (transactionsResponse.status == 401 || transactionsResponse.status == 403) {
-        this.setState(this.initialState());
+        this.setState(Object.assign(this.initialState(), { loggedIn: false }));
         return null;
       } else {
         return transactionsResponse.json();
@@ -169,13 +194,14 @@ export default class RootComponent extends Component {
         const ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
         customer.transactions = ds.cloneWithRows(transactions);
         this.setState({
+          loggedIn: true,
           loading: false,
           customer: customer
         });
       }
     })
     .catch((error) => {
-      this.setState({ error: error.message });
+      this.setState({ message: error.message });
     });
   }
 }
@@ -186,7 +212,7 @@ export default class RootComponent extends Component {
 const LoginView = (props) => {
   return (
     <TouchableOpacity onPress={props.onLoginTapped}>
-      <View>
+      <View style={styles.button}>
         <Text style={styles.buttonText}>Login with Starling</Text>
       </View>
     </TouchableOpacity>
@@ -199,15 +225,24 @@ const LoginView = (props) => {
 const LoggedInView = (props) => {
   return (
     <View style={styles.loggedInView}>
-      <TouchableOpacity onPress={props.onLogoutTapped}>
-        <View style={styles.logoutButton}>
-          <Text style={styles.buttonText}>Logout</Text>
-        </View>
-      </TouchableOpacity>
-      <Text style={styles.header}>Your Transactions</Text>
-      {props.customer.transactions
-        ? <TransactionList transactions={props.customer.transactions} />
-        : <LoadingView message="No transactions"/> }
+      <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+        <TouchableOpacity onPress={props.onRefreshTapped}>
+          <View style={styles.button}>
+            <Text style={styles.buttonText}>Reload</Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={props.onLogoutTapped}>
+          <View style={styles.button}>
+            <Text style={styles.buttonText}>Logout</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+      <View>
+        <Text style={styles.header}>Your Transactions</Text>
+        {props.customer.transactions
+          ? <TransactionList transactions={props.customer.transactions} />
+          : <LoadingView message="No transactions"/> }
+      </View>
     </View>
   );
 }
@@ -255,19 +290,30 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica',
     fontSize: 14,
   },
+  message: {
+    fontSize: 26,
+    fontWeight: '400',
+    color: '#C33C54',
+    paddingBottom: 30
+  },
+  centering: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 8,
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f6f4f4',
+    backgroundColor: '#FFFDFB',
     padding: 10,
   },
   header: {
     marginTop: 20,
     marginBottom: 15,
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#4a4d75'
+    fontSize: 30,
+    fontWeight: '400',
+    color: '#7CBA5B'
   },
   transactionList: {
     width: windowSize.width - 20
@@ -275,28 +321,35 @@ const styles = StyleSheet.create({
   transactionListItem: {
     flex: 1,
     flexDirection: 'row',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 5,
+    paddingBottom: 5,
   },
   transactionReference: {
-    fontSize: 20,
-    color: '#556655'
+    fontSize: 22,
+    fontWeight: '400',
+    color: '#2B647F',
+    width: windowSize * 0.7,
   },
   transactionAmount: {
     fontSize: 20,
-    color: '#887645'
+    fontWeight: '700',
+    color: '#24CBD0'
   },
   loggedInView: {
     marginTop: 50
   },
-  buttonText: {
-    fontSize: 18,
-    fontWeight : '700',
-    color: '#4a4d75',
+  button: {
+    backgroundColor: '#ACADAF',
+    padding: 12,
+    borderRadius: 6,
   },
-  logoutButton: {
-    padding: 10,
-    alignItems: 'flex-end'
-  }
+  buttonText: {
+    fontSize: 20,
+    fontWeight : '400',
+    color: '#193957',
+  },
 });
 
 AppRegistry.registerComponent('StarlingReactNative', () => StarlingReactNative);
