@@ -1,6 +1,6 @@
 {
   "oauthLoginCallbackUri": "starlingreactnative://login",
-  "clientId": "AVSR61t8XXPMcEzl5DSD",
-  "appServerBase": "http://192.168.0.7:8888",
+  "clientId": "<your client_id>",
+  "appServerBase": "http://localhost:8888",
   "appServerTokenRequestPath": "/oauth"
 }

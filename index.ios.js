@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, {Component} from 'react';
 import {
   AppRegistry
 } from 'react-native';
@@ -6,7 +6,7 @@ import RootComponent from './RootComponent';
 
 export default class StarlingReactNative extends Component {
 
-  render() {
+  render () {
     return <RootComponent />;
   }
 

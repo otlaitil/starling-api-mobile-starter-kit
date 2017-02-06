@@ -11,13 +11,11 @@
 </h1>
 
 
-# Starling API React Native Starter Project
-
-# Mobile Starter Kit
-
 This project contains a React Native sample application for mobile that integrates with the Starling Bank API to retrieve a customer's transaction history.
 
 It can be used for development on both iOS and Android.
+
+Looking for the [Web Starter Kit](https://github.com/starlingbank/developer-api-web-app-starter) instead?
 
 ## Getting Started
 Please also take a look at the higher-level [Getting Started Guide](http://developer.starlingbank.com/get-started) on our site.
@@ -28,23 +26,23 @@ Once you have signed up to the [Starling Developers](http://developer.starlingba
 
 You will then need to run an app server to make API requests to the Starling API server, as the client secret needs to be hidden.
  
- Clone the [Web Starter Kit (`developer-api-web-starter`)](https://github.com/starlingbank/developer-api-web-app-starter#Mobile-Starter-Kit-Users) project and start the server as documented there using this `config.json`:
+ Clone the [Web Starter Kit (`developer-api-web-starter`)](https://github.com/starlingbank/developer-api-web-app-starter#mobile-starter-kit-users) project and start the server as documented there using this `config.json`:
 
-```
+```JSON
 {
   "clientId": "<client_id>",
   "clientSecret": "<client_secret>",
   "cookieSecret": "21e361d0-ff2c-4763-a084-1032f2103ce8",
   "redirectUri": "starlingreactnative://login",
   "partnerApiBase": "https://api.starlingbank.com",
-  "developerPortalBase": "https://oauth.starlingbank.com"
+  "oauthBase": "https://oauth.starlingbank.com"
 }
 ```
 
 Now set up the React Native app:
 * Open
 * Edit config.json (use your IP address, rather than `localhost`, so that the app can connect to this server):
-```
+```JSON
 {
   "oauthLoginCallbackUri": "starlingreactnative://login",
   "clientId": "<client_id>",

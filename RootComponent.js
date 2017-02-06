@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, {Component} from 'react';
 import {
   ActivityIndicator,
   AppRegistry,
@@ -17,12 +17,12 @@ const config = require('./config.json');
 
 export default class RootComponent extends Component {
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = this.initialState();
   }
 
-  render() {
+  render () {
     return (
       <View style={styles.container}>
 
@@ -30,12 +30,14 @@ export default class RootComponent extends Component {
           <Text style={[styles.defaultText, styles.message]}>{this.state.message}</Text> : null}
         {!this.state.loading && !this.state.loggedIn ? <LoginView onLoginTapped={this.loginWithStarling}/> : null}
         {this.state.customer && this.state.customer.transactions
-          ? <LoggedInView customer={this.state.customer} onRefreshTapped={this.loadTransactions.bind(this)} onLogoutTapped={this.logout}/>
+          ? <LoggedInView customer={this.state.customer} onRefreshTapped={this.loadTransactions.bind(this)}
+                          onLogoutTapped={this.logout}/>
           : null}
         {this.state.loading
-          ? <View style={{position: 'absolute', top: 0, left: 0, width: windowSize.width, height: windowSize.height, backgroundColor: 'rgba(120,120,120,0.4)', flex: 1, flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-              <ActivityIndicator animating={true} style={[styles.centering, {height: 80}]} size="large"/>
-            </View>
+          ? <View
+            style={{position: 'absolute', top: 0, left: 0, width: windowSize.width, height: windowSize.height, backgroundColor: 'rgba(120,120,120,0.4)', flex: 1, flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator animating={true} style={[styles.centering, {height: 80}]} size="large"/>
+          </View>
           : null}
       </View>
     );
@@ -44,7 +46,7 @@ export default class RootComponent extends Component {
   /*
    * Used to set the app state back to its initial values.
    */
-  initialState() {
+  initialState () {
     return {
       loggedIn: true, // Assume logged in until proven otherwise.
       loading: false,
@@ -68,21 +70,21 @@ export default class RootComponent extends Component {
     });
     const oauthUrl = `starlingbank://oauth?client_id=${config.clientId}&response_type=code&redirect_url=${encodeURIComponent(config.oauthLoginCallbackUri)}&state=${oauthState}`;
     Linking.openURL(oauthUrl).catch(err => this.setState({message: error.message}));
-  }
+  };
 
   /*
    * Sends an HTTP request to the app server to destroy the session.
    */
   logout = () => {
-    this.setState({ loading: true });
+    this.setState({loading: true});
     fetch(`${config.appServerBase}/api/logout`)
-    .then(() => {
-      this.setState(Object.assign(this.initialState(), { loggedIn: false }));
-    })
-    .catch((error) => {
-      this.setState(Object.assign(this.initialState(), { message: error.message }));
-    });
-  }
+      .then(() => {
+        this.setState(Object.assign(this.initialState(), {loggedIn: false}));
+      })
+      .catch((error) => {
+        this.setState(Object.assign(this.initialState(), {message: error.message}));
+      });
+  };
 
   /*
    * Register the `handleOauthLoginCallback` link handler. This is called when the
@@ -92,7 +94,7 @@ export default class RootComponent extends Component {
    * Then try to load the customer's transactions. If the app server returns a 403,
    * the customer will be promted to 'log in with Starling'.
    */
-  componentDidMount() {
+  componentDidMount () {
     Linking.addEventListener('url', this.handleOauthLoginCallback.bind(this));
     AppState.addEventListener('change', this.handleAppStateChange.bind(this));
     this.loadTransactions();
@@ -101,7 +103,7 @@ export default class RootComponent extends Component {
   /*
    * Remove event listeners.
    */
-  componentWillUnmount() {
+  componentWillUnmount () {
     Linking.removeEventListener('url', this.handleOauthLoginCallback);
     AppState.removeEventListener('change', this.handleAppStateChange);
   }
@@ -111,7 +113,7 @@ export default class RootComponent extends Component {
    * opened by the Starling app, then we'll want to reset the app to its initial
    * state to hide the 'Logging in' message and show the 'Log in with Starling button'.
    */
-  handleAppStateChange(appState) {
+  handleAppStateChange (appState) {
     // if (appState == "active") {
     //   this.setState(this.initialState());
     // }
@@ -125,9 +127,9 @@ export default class RootComponent extends Component {
    * forwards these query parameters on to the app server, which stores these
    * tokens in the app's HTTP session.
    */
-  handleOauthLoginCallback(event) {
+  handleOauthLoginCallback (event) {
     if (event.url.startsWith(config.oauthLoginCallbackUri)) {
-      var queryParams = {}
+      var queryParams = {};
       const queryString = event.url.substring(config.oauthLoginCallbackUri.length + 1)
       queryString.split("&").forEach(param => {
         const parts = param.split("=");
@@ -144,18 +146,18 @@ export default class RootComponent extends Component {
         });
       } else {
         fetch(`${config.appServerBase}${config.appServerTokenRequestPath}?${queryString}`)
-        .then(() => {
-          this.setState({
-            loggedOut: false,
-            oauthState: null
+          .then(() => {
+            this.setState({
+              loggedOut: false,
+              oauthState: null
+            })
           })
-        })
-        .then(() => {
-          this.loadTransactions();
-        })
-        .catch((error) => {
-          this.setState({ message: error.message });
-        });
+          .then(() => {
+            this.loadTransactions();
+          })
+          .catch((error) => {
+            this.setState({message: error.message});
+          });
       }
     }
   }
@@ -171,38 +173,38 @@ export default class RootComponent extends Component {
    * either has no OAuth authorisation token or that token is no longer valid. The
    * app will be placed back into a logged out state.
    */
-  loadTransactions() {
-    this.setState({ loading: true });
+  loadTransactions () {
+    this.setState({loading: true});
     console.log("Fetching transactions: " + `${config.appServerBase}/api/transactions`);
     fetch(`${config.appServerBase}/api/transactions`, {
       method: 'GET',
       headers: {
-       'Accept': 'application/json'
+        'Accept': 'application/json'
       }
     })
-    .then((transactionsResponse) => {
-      if (transactionsResponse.status == 401 || transactionsResponse.status == 403) {
-        this.setState(Object.assign(this.initialState(), { loggedIn: false }));
-        return null;
-      } else {
-        return transactionsResponse.json();
-      }
-    })
-    .then(transactions => {
-      if (transactions) {
-        const customer = this.state.customer || {};
-        const ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
-        customer.transactions = ds.cloneWithRows(transactions);
-        this.setState({
-          loggedIn: true,
-          loading: false,
-          customer: customer
-        });
-      }
-    })
-    .catch((error) => {
-      this.setState({ message: error.message });
-    });
+      .then((transactionsResponse) => {
+        if (transactionsResponse.status == 401 || transactionsResponse.status == 403) {
+          this.setState(Object.assign(this.initialState(), {loggedIn: false}));
+          return null;
+        } else {
+          return transactionsResponse.json();
+        }
+      })
+      .then(transactions => {
+        if (transactions) {
+          const customer = this.state.customer || {};
+          const ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
+          customer.transactions = ds.cloneWithRows(transactions);
+          this.setState({
+            loggedIn: true,
+            loading: false,
+            customer: customer
+          });
+        }
+      })
+      .catch((error) => {
+        this.setState({message: error.message});
+      });
   }
 }
 
@@ -240,7 +242,7 @@ const LoggedInView = (props) => {
       <View>
         <Text style={styles.header}>Your Transactions</Text>
         {props.customer.transactions
-          ? <TransactionList transactions={props.customer.transactions} />
+          ? <TransactionList transactions={props.customer.transactions}/>
           : <LoadingView message="No transactions"/> }
       </View>
     </View>
@@ -252,7 +254,8 @@ const LoggedInView = (props) => {
  */
 const TransactionList = (props) => {
   return (
-    <ListView style={styles.transactionList} dataSource={props.transactions} renderRow={(t) => <TransactionListItem transaction={t} /> } />
+    <ListView style={styles.transactionList} dataSource={props.transactions}
+              renderRow={(t) => <TransactionListItem transaction={t} /> }/>
   );
 }
 
@@ -275,10 +278,14 @@ const formatAmount = (transaction) => {
 
 const currencySymbol = (currency) => {
   switch (currency) {
-    case "GBP": return "£";
-    case "EUR": return "€";
-    case "USD": return "$";
-    default: return currency;
+    case "GBP":
+      return "£";
+    case "EUR":
+      return "€";
+    case "USD":
+      return "$";
+    default:
+      return currency;
   }
 };
 
@@ -347,7 +354,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 20,
-    fontWeight : '400',
+    fontWeight: '400',
     color: '#193957',
   },
 });
