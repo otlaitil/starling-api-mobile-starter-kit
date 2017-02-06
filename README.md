@@ -1,7 +1,7 @@
 
 <!-- Logo -->
 <p align="center">
-    <img height="128" width="128" src="https://www.starlingbank.com/static-files/developer-portal/github/starter-mobile.png">
+    <img height="180" width="180" src="https://www.starlingbank.com/static-files/developer-portal/github/starter-mobile.png">
 </p>
 
 <!-- Name -->
@@ -27,7 +27,8 @@ Once you have signed up to the [Starling Developers](http://developer.starlingba
 ### Configuration
 
 You will then need to run an app server to make API requests to the Starling API server, as the client secret needs to be hidden.
-* Clone the `node-api-starter` project and start it as documented there using this `config.json`:
+ 
+ Clone the [Web Starter Kit (`developer-api-web-starter`)](https://github.com/starlingbank/developer-api-web-app-starter#Mobile-Starter-Kit-Users) project and start the server as documented there using this `config.json`:
 
 ```
 {
