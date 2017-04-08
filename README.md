@@ -53,7 +53,7 @@ Now set up the React Native app:
 {
   "oauthLoginCallbackUri": "starlingreactnative://login",
   "clientId": "<client_id>",
-  "appServerBase": "http://<your_ip_address>:8888",
+  "appServerBase": "http://<your_ip_address>:3000",
   "appServerTokenRequestPath": "/oauth"
 }
 ```
