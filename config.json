@@ -2,5 +2,6 @@
   "oauthLoginCallbackUri": "starlingreactnative://login",
   "clientId": "<your client_id>",
   "appServerBase": "http://localhost:8888",
-  "appServerTokenRequestPath": "/oauth"
+  "appServerTokenRequestPath": "/oauth",
+  "useSandbox": true
 }

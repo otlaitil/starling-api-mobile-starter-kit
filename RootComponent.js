@@ -175,8 +175,9 @@ export default class RootComponent extends Component {
    */
   loadTransactions () {
     this.setState({loading: true});
-    console.log("Fetching transactions: " + `${config.appServerBase}/api/transactions`);
-    fetch(`${config.appServerBase}/api/transactions`, {
+    const path = config.useSandbox ? "/api/sandbox/transactions" : "/api/transactions";
+    console.log("Fetching transactions: " + `${config.appServerBase}${path}`);
+    fetch(`${config.appServerBase}${path}`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json'
@@ -266,7 +267,7 @@ const TransactionListItem = (props) => {
   const transaction = props.transaction;
   return (
     <View style={styles.transactionListItem}>
-      <Text style={styles.transactionReference}>{transaction.reference}</Text>
+      <Text style={styles.transactionReference}>{transaction.narrative}</Text>
       <Text style={styles.transactionAmount}>{formatAmount(transaction)}</Text>
     </View>
   );
