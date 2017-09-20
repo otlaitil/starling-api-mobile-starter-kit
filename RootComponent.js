@@ -69,7 +69,7 @@ export default class RootComponent extends Component {
       oauthState: oauthState
     });
     const oauthUrl = `starlingbank://oauth?client_id=${config.clientId}&response_type=code&redirect_url=${encodeURIComponent(config.oauthLoginCallbackUri)}&state=${oauthState}`;
-    Linking.openURL(oauthUrl).catch(err => this.setState({message: error.message}));
+    Linking.openURL(oauthUrl).catch(err => this.setState({message: err.message}));
   };
 
   /*
